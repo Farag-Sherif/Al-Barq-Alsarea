@@ -1,0 +1,5 @@
+export const DEFAULT_RESTAURANTS_ADDRESS = 'Saudi Arabia'
+export const DEFAULT_RESTAURANTS_LATITUDE = 21.3891
+export const DEFAULT_RESTAURANTS_LONGITUDE = 39.8579
+
+export const DEFAULT_RESTAURANTS_BROWSE_URL = '/restaurants?all=1'

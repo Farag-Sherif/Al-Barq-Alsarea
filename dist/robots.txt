@@ -1,0 +1,5 @@
+﻿User-agent: *
+Allow: /
+
+Sitemap: https://albarqalsaree.com/sitemap.xml
+

@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-ar: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-en: 'Inter', 'Segoe UI', Arial, sans-serif;
+  --app-font: var(--font-en);
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
+#root {
+  min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/* Direction is controlled by <html dir="..."> (see I18nProvider) */
+html[dir='rtl'] body {
+  direction: rtl;
+}
+
+html[dir='ltr'] body {
+  direction: ltr;
+}
+
+html[lang='ar'] {
+  --app-font: var(--font-ar);
+}
+
+html[lang='en'] {
+  --app-font: var(--font-en);
+}
+
+body {
+  margin: 0;
+  background: #f9fafb;
+  font-family: var(--app-font);
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Hover: خط يتحرك من الجهة (before/after style) */
+.hover-line {
+  position: relative;
+  overflow: hidden;
+}
+.hover-line::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: #ff6b2c;
+  transition: width 0.3s ease;
+}
+.hover-line:hover::after {
+  width: 100%;
+}
+[dir='rtl'] .hover-line::after {
+  left: auto;
+  right: 0;
+}
+
+/* Hover: حركة sweep خلفية */
+.hover-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.hover-sweep::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 107, 44, 0.12);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+  z-index: 0;
+}
+.hover-sweep:hover::before {
+  transform: scaleX(1);
+}
+.hover-sweep > * {
+  position: relative;
+  z-index: 1;
+}
+[dir='rtl'] .hover-sweep::before {
+  transform-origin: right;
+}
+
+/* Modern Scrollbar Styles */
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff6b2c;
+  border-radius: 10px;
+  border: 2px solid #f1f5f9;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e55a1f;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #ff6b2c #f1f5f9;
+}
+
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
+}
+
+/* Reduce overly heavy typography across the app by one weight step */
+.font-bold {
+  font-weight: 600;
+}
+
+.font-extrabold {
+  font-weight: 700;
+}

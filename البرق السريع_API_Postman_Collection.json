@@ -1,0 +1,578 @@
+﻿{
+    "info": {
+        "name": "البرق السريع API",
+        "description": "Food Delivery API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/auth/register",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"0123456789\",\n    \"password\": \"password123\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/auth/login",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get User",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/auth/user",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/auth/profile",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"phone\": \"0123456789\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Update Password",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/auth/password",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"oldpassword\",\n    \"password\": \"newpassword\",\n    \"password_confirmation\": \"newpassword\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/auth/logout",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "Social - Google Redirect",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/auth/social/redirect?provider=google"
+                    }
+                },
+                {
+                    "name": "Social - Facebook Redirect",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/auth/social/redirect?provider=facebook"
+                    }
+                },
+                {
+                    "name": "Social - Callback",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/auth/social/callback?provider=google"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Restaurants",
+            "item": [
+                {
+                    "name": "List Restaurants",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/restaurants"
+                    }
+                },
+                {
+                    "name": "Get Restaurant",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/restaurants/1"
+                    }
+                },
+                {
+                    "name": "Get Restaurant Menu",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/restaurants/1/menu"
+                    }
+                },
+                {
+                    "name": "Get Restaurant Reviews",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/restaurants/1/reviews"
+                    }
+                },
+                {
+                    "name": "Get Restaurant States",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/restaurants/1/states"
+                    }
+                },
+                {
+                    "name": "Check Delivery",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/restaurants/1/check-delivery/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Categories",
+            "item": [
+                {
+                    "name": "List Categories",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/categories"
+                    }
+                },
+                {
+                    "name": "Get Category",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/categories/1"
+                    }
+                },
+                {
+                    "name": "Get Category Items",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/categories/1/items"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Products",
+            "item": [
+                {
+                    "name": "List Products",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/products"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cuisine Types",
+            "item": [
+                {
+                    "name": "List Cuisine Types",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/cuisine-types"
+                    }
+                },
+                {
+                    "name": "Get Cuisine Type",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/cuisine-types/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sliders",
+            "item": [
+                {
+                    "name": "List Sliders",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/sliders"
+                    }
+                },
+                {
+                    "name": "Get Slider",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/sliders/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "States",
+            "item": [
+                {
+                    "name": "List States",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/states"
+                    }
+                },
+                {
+                    "name": "Get State",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/states/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Addresses",
+            "item": [
+                {
+                    "name": "List Addresses",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/addresses",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "Create Address",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/addresses",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"state_id\": 1,\n    \"address\": \"123 Main St\",\n    \"latitude\": 24.7136,\n    \"longitude\": 46.6753,\n    \"is_default\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Address",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/addresses/1",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "Update Address",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/addresses/1",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"state_id\": 1,\n    \"address\": \"New Address\",\n    \"latitude\": 24.7136,\n    \"longitude\": 46.6753,\n    \"is_default\": false\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Address",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/addresses/1",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Orders",
+            "item": [
+                {
+                    "name": "Create Order",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/orders",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"restaurant_id\": 1,\n    \"address_id\": 1,\n    \"payment_method\": \"cash\",\n    \"notes\": \"No onions please\",\n    \"promo_code\": \"DISCOUNT10\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"Extra spicy\",\n            \"addons\": [1, 2]\n        }\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get My Orders",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/orders/my-orders",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "Get Order",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/orders/1",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "Cancel Order",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/orders/1/cancel",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Reviews",
+            "item": [
+                {
+                    "name": "List Reviews",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/reviews"
+                    }
+                },
+                {
+                    "name": "Create Review",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/reviews",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"restaurant_id\": 1,\n    \"order_id\": 1,\n    \"rating\": 5,\n    \"comment\": \"Great food!\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Review",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/reviews/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Promotions",
+            "item": [
+                {
+                    "name": "List Promotions",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/promotions"
+                    }
+                },
+                {
+                    "name": "Get Promotion",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/promotions/1"
+                    }
+                },
+                {
+                    "name": "Validate Promo Code",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/promotions/validate",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"DISCOUNT10\",\n    \"restaurant_id\": 1,\n    \"subtotal\": 100\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Apply Promo Code",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/promotions/apply",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"DISCOUNT10\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Branches",
+            "item": [
+                {
+                    "name": "List Branches",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/branches?restaurant_id=1"
+                    }
+                },
+                {
+                    "name": "Get Branch",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/branches/1"
+                    }
+                },
+                {
+                    "name": "Get Nearby Branches",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/branches/nearby?restaurant_id=1&latitude=24.7136&longitude=46.6753"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Settings",
+            "item": [
+                {
+                    "name": "Get Settings",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/settings"
+                    }
+                }
+            ]
+        }
+    ]
+}
+

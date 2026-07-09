@@ -1,0 +1,21 @@
+{
+  "name": "البرق السريع",
+  "short_name": "البرق السريع",
+  "icons": [
+    {
+      "src": "/pwa/icon-192-logo-v5.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512-logo-v5.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#03081F",
+  "background_color": "#03081F",
+  "display": "standalone"
+}

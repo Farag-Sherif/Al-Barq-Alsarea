@@ -1,0 +1,32 @@
+{
+  "info": {
+    "name": "OrderUK API - FAQs",
+    "description": "FAQ API endpoints for OrderUK Food Delivery",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "FAQs",
+      "item": [
+        {
+          "name": "Get FAQs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/faqs",
+              "host": ["{{base_url}}"],
+              "path": ["faqs"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
