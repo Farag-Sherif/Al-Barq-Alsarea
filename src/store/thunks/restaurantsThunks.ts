@@ -11,6 +11,40 @@ export const fetchCuisineTypes = createAsyncThunk<CuisineType[]>('restaurants/fe
   return api.getCuisineTypes()
 })
 
+export const fetchCuisineCounts = createAsyncThunk<Record<string, number>, void, { state: RootState }>(
+  'restaurants/fetchCuisineCounts',
+  async (_, thunkApi) => {
+    const state = thunkApi.getState()
+    const cuisines = state.restaurants.cuisineOptions
+    
+    if (Object.keys(state.restaurants.cuisineCountsMap).length > 0) {
+      return state.restaurants.cuisineCountsMap
+    }
+
+    const counts: Record<string, number> = {}
+
+    for (let i = 0; i < cuisines.length; i += 3) {
+      const chunk = cuisines.slice(i, i + 3)
+      await Promise.all(
+        chunk.map(async (cuisine) => {
+          try {
+            const res = await api.getRestaurants({ 
+              page: 1, 
+              pageSize: 1, 
+              cuisineKeys: [cuisine.key],
+            })
+            counts[cuisine.key] = res.total
+          } catch {
+            counts[cuisine.key] = -1 
+          }
+        })
+      )
+    }
+
+    return counts
+  }
+)
+
 export const fetchRestaurants = createAsyncThunk<
   { items: Restaurant[]; total: number },
   { ignoreSelectedAddress?: boolean } | void,

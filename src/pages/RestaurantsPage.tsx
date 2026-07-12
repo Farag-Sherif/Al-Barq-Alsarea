@@ -263,17 +263,113 @@ export default function RestaurantsPage() {
     () => formatAddressForDisplay(activeAddress, lang),
     [activeAddress, lang],
   )
-  const visibleCuisineOptions = useMemo(() => {
-    if (showAllCuisines) return cuisineOptions
+  const maxCuisineCountsRef = useRef<Map<string, number>>(new Map())
+  const lastBaseSignatureRef = useRef<string>('')
 
-    const baseOptions = cuisineOptions.slice(0, 6)
+  const baseSignature = `${activeAddress}|${effectiveSearchParam}|${parsedCategoryParamValues.join(',')}`
+  if (lastBaseSignatureRef.current !== baseSignature) {
+    maxCuisineCountsRef.current.clear()
+    lastBaseSignatureRef.current = baseSignature
+  }
+
+  const cuisineCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const option of cuisineOptions) {
+      counts.set(option.key, 0)
+    }
+
+    for (const item of items) {
+      const rawValues = [item.cuisine, item.cuisineAr, item.cuisineEn, ...(item.tags || [])].filter(Boolean) as string[]
+      const keys = resolveCuisineKeysFromQueryParam(rawValues, cuisineOptions)
+      for (const k of keys) {
+        counts.set(k, (counts.get(k) || 0) + 1)
+      }
+    }
+
+    // Accumulate the maximum seen count so filters don't disappear when one is selected
+    for (const [key, count] of counts.entries()) {
+      const currentMax = maxCuisineCountsRef.current.get(key) || 0
+      if (count > currentMax) {
+        maxCuisineCountsRef.current.set(key, count)
+      }
+    }
+
+    return counts
+  }, [items, cuisineOptions])
+
+  const maxCategoryCountsRef = useRef<Map<string, number>>(new Map())
+
+  if (lastBaseSignatureRef.current !== baseSignature) {
+    maxCategoryCountsRef.current.clear()
+    // lastBaseSignatureRef is already updated above
+  }
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const cat of categories) {
+      counts.set(cat.id, 0)
+    }
+
+    for (const item of items) {
+      const rawValues = [item.cuisine, item.cuisineAr, item.cuisineEn, ...(item.tags || [])].filter(Boolean) as string[]
+      const ids = resolveCategoryIdsFromQueryParam(rawValues, categories)
+      for (const id of ids) {
+        counts.set(id, (counts.get(id) || 0) + 1)
+      }
+    }
+
+    // Accumulate the maximum seen count
+    for (const [id, count] of counts.entries()) {
+      const currentMax = maxCategoryCountsRef.current.get(id) || 0
+      if (count > currentMax) {
+        maxCategoryCountsRef.current.set(id, count)
+      }
+    }
+
+    return counts
+  }, [items, categories])
+
+  const validCategories = useMemo(() => {
+    return categories
+      .filter((cat) => {
+        const maxSeen = maxCategoryCountsRef.current.get(cat.id) || 0
+        const current = categoryCounts.get(cat.id) || 0
+        const isSelected = filters.selectedCategoryIds.includes(cat.id)
+        return maxSeen > 0 || current > 0 || isSelected
+      })
+      .sort((a, b) => {
+        const countA = Math.max(maxCategoryCountsRef.current.get(a.id) || 0, categoryCounts.get(a.id) || 0)
+        const countB = Math.max(maxCategoryCountsRef.current.get(b.id) || 0, categoryCounts.get(b.id) || 0)
+        return countB - countA
+      })
+  }, [categories, categoryCounts, filters.selectedCategoryIds])
+
+  const validCuisineOptions = useMemo(() => {
+    return cuisineOptions
+      .filter((option) => {
+        const maxSeen = maxCuisineCountsRef.current.get(option.key) || 0
+        const current = cuisineCounts.get(option.key) || 0
+        const isSelected = filters.cuisineKeys.includes(option.key)
+        return maxSeen > 0 || current > 0 || isSelected
+      })
+      .sort((a, b) => {
+        const countA = Math.max(maxCuisineCountsRef.current.get(a.key) || 0, cuisineCounts.get(a.key) || 0)
+        const countB = Math.max(maxCuisineCountsRef.current.get(b.key) || 0, cuisineCounts.get(b.key) || 0)
+        return countB - countA
+      })
+  }, [cuisineOptions, cuisineCounts, filters.cuisineKeys])
+
+  const visibleCuisineOptions = useMemo(() => {
+    if (showAllCuisines) return validCuisineOptions
+
+    const baseOptions = validCuisineOptions.slice(0, 6)
     const baseKeys = new Set(baseOptions.map((option) => option.key))
-    const selectedOutsideBase = cuisineOptions.filter(
+    const selectedOutsideBase = validCuisineOptions.filter(
       (option) => filters.cuisineKeys.includes(option.key) && !baseKeys.has(option.key),
     )
     return [...baseOptions, ...selectedOutsideBase]
-  }, [cuisineOptions, filters.cuisineKeys, showAllCuisines])
-  const canToggleCuisineView = cuisineOptions.length > 6
+  }, [validCuisineOptions, filters.cuisineKeys, showAllCuisines])
+  const canToggleCuisineView = validCuisineOptions.length > 6
   const appliedFilterParamsRef = useRef('')
   const rawFilterParamsSignature = useMemo(
     () => `${parsedCategoryParamValues.join(',')}|${parsedCuisineParamValues.join(',')}`,
@@ -487,9 +583,15 @@ export default function RestaurantsPage() {
                 className="mt-6 flex gap-6 p-5 overflow-x-auto pb-3"
                 style={{ scrollSnapType: 'x mandatory' }}
               >
-                {categories.map((c) => {
+                {validCategories.map((c) => {
                   const categoryName = lang === 'ar' ? c.nameAr || c.name : c.nameEn || c.name || c.nameAr || ''
                   const isSelected = filters.selectedCategoryIds.includes(c.id)
+                  
+                  // Compute dynamic count
+                  const currentCount = categoryCounts.get(c.id) || 0
+                  const maxCount = maxCategoryCountsRef.current.get(c.id) || 0
+                  const displayCount = Math.max(currentCount, maxCount, c.restaurantsCount || 0)
+
                   return (
                     <button
                       key={c.id}
@@ -505,7 +607,7 @@ export default function RestaurantsPage() {
                       <img src={c.imageUrl} alt="" className="h-full w-full object-cover" />
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy via-navy/90 to-transparent px-5 pb-5 pt-12">
                         <div className="flex items-center justify-between gap-3 text-white">
-                          <span className="text-xs text-white/70">{t('restaurants.restaurantCount', { count: c.restaurantsCount })}</span>
+                          <span className="text-xs text-white/70">{t('restaurants.restaurantCount', { count: displayCount })}</span>
                           <span className="text-sm font-semibold">{categoryName}</span>
                         </div>
                       </div>

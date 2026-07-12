@@ -1,4 +1,4 @@
-﻿import { getMenuCategories, getMenuItems, type MenuCategory, type MenuItem, type MenuOption } from '@/data/menuData'
+import { getMenuCategories, getMenuItems, type MenuCategory, type MenuItem, type MenuOption } from '@/data/menuData'
 import type {
   Address,
   Brand,

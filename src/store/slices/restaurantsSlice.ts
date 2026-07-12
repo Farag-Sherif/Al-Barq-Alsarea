@@ -1,6 +1,6 @@
-﻿import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { Category, CuisineType, Restaurant } from '../types/domain'
-import { fetchCategories, fetchCuisineTypes, fetchRestaurants } from '../thunks/restaurantsThunks'
+import { fetchCategories, fetchCuisineTypes, fetchRestaurants, fetchCuisineCounts } from '../thunks/restaurantsThunks'
 
 export type SortBy = 'recommended' | 'rating' | 'orders'
 
@@ -20,6 +20,7 @@ export type RestaurantsFilters = {
 export type RestaurantsState = {
   categories: Category[]
   cuisineOptions: CuisineType[]
+  cuisineCountsMap: Record<string, number>
   items: Restaurant[]
   total: number
   loading: boolean
@@ -30,6 +31,7 @@ export type RestaurantsState = {
 const initialState: RestaurantsState = {
   categories: [],
   cuisineOptions: [],
+  cuisineCountsMap: {},
   items: [],
   total: 0,
   loading: false,
@@ -129,6 +131,9 @@ const restaurantsSlice = createSlice({
       })
       .addCase(fetchCuisineTypes.fulfilled, (state, action) => {
         state.cuisineOptions = action.payload
+      })
+      .addCase(fetchCuisineCounts.fulfilled, (state, action) => {
+        state.cuisineCountsMap = action.payload
       })
       .addCase(fetchRestaurants.pending, (state) => {
         state.loading = true
