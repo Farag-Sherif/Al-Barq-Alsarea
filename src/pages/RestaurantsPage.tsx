@@ -511,8 +511,7 @@ export default function RestaurantsPage() {
     const amount = 340
     el.scrollBy({ left: direction === 'prev' ? -amount : amount, behavior: 'smooth' })
   }
-
-  const fromCount = Math.min(filters.pageSize, total)
+  const fromCount = items.length > 0 ? items.length : Math.min(filters.pageSize, total)
 
   return (
     <>
