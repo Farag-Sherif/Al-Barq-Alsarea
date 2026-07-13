@@ -613,7 +613,9 @@ export default function RestaurantsPage() {
                     disabled={filters.page <= 1}
                     onClick={() => {
                       dispatch(setPage(Math.max(1, filters.page - 1)))
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                      setTimeout(() => {
+                        window.scrollTo(0, 0)
+                      }, 0)
                     }}
                   >
                     {t('restaurants.prev')}
@@ -625,7 +627,9 @@ export default function RestaurantsPage() {
                     disabled={filters.page >= pageCount}
                     onClick={() => {
                       dispatch(setPage(Math.min(pageCount, filters.page + 1)))
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                      setTimeout(() => {
+                        window.scrollTo(0, 0)
+                      }, 0)
                     }}
                   >
                     {t('restaurants.next')}
