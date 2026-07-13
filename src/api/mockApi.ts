@@ -12,6 +12,7 @@ import type {
   User,
 } from '@/store/types/domain'
 import { categories, cuisines, kitchens, mostOrderedRestaurants, restaurants } from '@/data/mockData'
+import { filterRestaurantsData } from '@/utils/filterRestaurants'
 import type {
   AppSettings,
   Faq,
@@ -28,10 +29,7 @@ export type RestaurantsQuery = {
   address?: string
   latitude?: number
   longitude?: number
-  categoryIds?: string[]
-  categoryNames?: string[]
-  cuisineKeys?: string[]
-  cuisineLabels?: string[]
+  selectedTags?: string[]
   minRating?: number
   openNow?: boolean
   sortBy?: 'recommended' | 'rating' | 'orders'
@@ -333,88 +331,9 @@ export async function getStates(): Promise<StateOption[]> {
   }))
 }
 
-export async function getRestaurants(query: RestaurantsQuery): Promise<{ items: Restaurant[]; total: number }> {
+export async function getRestaurants(query: RestaurantsQuery): Promise<{ items: Restaurant[]; total: number; tagCounts?: Record<string, number> }> {
   await wait(420)
-  const page = Math.max(1, query.page ?? 1)
-  const pageSize = Math.max(1, query.pageSize ?? 10)
-
-  let filtered = [...restaurants]
-  const normalize = (value: string): string =>
-    value
-      .toLowerCase()
-      .normalize('NFKC')
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-  if (query.search?.trim()) {
-    const needle = query.search.trim().toLowerCase()
-    filtered = filtered.filter((restaurant) => {
-      return restaurant.name.toLowerCase().includes(needle) || restaurant.cuisine.toLowerCase().includes(needle)
-    })
-  }
-
-  if (query.categoryIds?.length) {
-    const categoryNames = query.categoryIds
-      .map((id) => categories.find((category) => category.id === id)?.name)
-      .filter((value): value is string => Boolean(value))
-    if (categoryNames.length) {
-      filtered = filtered.filter((restaurant) =>
-        categoryNames.some((categoryName) => restaurant.tags.some((tag) => tag.includes(categoryName))),
-      )
-    }
-  }
-
-  if (query.cuisineKeys?.length) {
-    const labels = cuisines.filter((item) => query.cuisineKeys?.includes(item.key)).map((item) => item.label)
-    if (labels.length) {
-      filtered = filtered.filter((restaurant) =>
-        labels.some((label) => restaurant.cuisine.includes(label) || restaurant.tags.some((tag) => tag.includes(label))),
-      )
-    }
-  }
-
-  if (query.address?.trim()) {
-    const addressNeedle = normalize(query.address)
-    const hasAddressMetadata = filtered.some((restaurant) =>
-      [restaurant.address, restaurant.addressAr, restaurant.city]
-        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-        .some((value) => normalize(value).length > 0),
-    )
-
-    if (hasAddressMetadata) {
-      filtered = filtered.filter((restaurant) => {
-        const haystack = [restaurant.address, restaurant.addressAr, restaurant.city]
-          .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-          .map((value) => normalize(value))
-          .filter(Boolean)
-        return haystack.some((value) => value.includes(addressNeedle) || addressNeedle.includes(value))
-      })
-    }
-  }
-
-  if ((query.minRating ?? 0) > 0) {
-    filtered = filtered.filter((restaurant) => restaurant.rating >= (query.minRating ?? 0))
-  }
-
-  if (query.openNow === true) {
-    filtered = filtered.filter((restaurant) => restaurant.isOpen)
-  } else if (query.openNow === false) {
-    filtered = filtered.filter((restaurant) => !restaurant.isOpen)
-  }
-
-  if (query.sortBy === 'rating') {
-    filtered.sort((a, b) => b.rating - a.rating)
-  } else if (query.sortBy === 'orders') {
-    filtered.sort((a, b) => b.ordersCount - a.ordersCount)
-  }
-
-  const total = filtered.length
-  const start = (page - 1) * pageSize
-  return {
-    items: filtered.slice(start, start + pageSize),
-    total,
-  }
+  return filterRestaurantsData(restaurants, categories, cuisines, query)
 }
 
 export async function getRestaurantById(id: string): Promise<Restaurant | null> {

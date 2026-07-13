@@ -12,9 +12,9 @@ import { toast } from '@/lib/toast'
 import { getPromotions, type Promotion } from '@/api'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setSelectedAddress } from '@/store/slices/deliverySlice'
-import { resetFilters, setCuisineKeys, setSearch, setSearchCoordinates } from '@/store/slices/restaurantsSlice'
+import { resetFilters, setTags, setSearch, setSearchCoordinates } from '@/store/slices/restaurantsSlice'
 import { fetchHomeData } from '@/store/thunks/homeThunks'
-import { fetchCuisineTypes, fetchCuisineCounts } from '@/store/thunks/restaurantsThunks'
+import { fetchCategories, fetchCuisineTypes, fetchAllRestaurantsLive } from '@/store/thunks/restaurantsThunks'
 import type { Kitchen } from '@/store/types/domain'
 import {
   DEFAULT_RESTAURANTS_BROWSE_URL,
@@ -648,7 +648,7 @@ export default function HomePage() {
     )
 
     dispatch(resetFilters())
-    dispatch(setCuisineKeys([]))
+    dispatch(setTags([]))
     dispatch(setSearch(searchValue))
     dispatch(
       setSearchCoordinates({
@@ -671,7 +671,7 @@ export default function HomePage() {
     dispatch(setSelectedAddress(''))
     setAddressQuery('')
     dispatch(resetFilters())
-    dispatch(setCuisineKeys([]))
+    dispatch(setTags([]))
     dispatch(setSearch(''))
     navigate(DEFAULT_RESTAURANTS_BROWSE_URL)
   }
@@ -687,13 +687,13 @@ export default function HomePage() {
     dispatch(setSearchCoordinates({ latitude: null, longitude: null }))
 
     if (cuisineKey) {
-      dispatch(setCuisineKeys([cuisineKey]))
+      dispatch(setTags([cuisineKey]))
       navigate(buildRestaurantsUrl([cuisineKey], { address: '' }))
       return
     }
 
     const fallbackCategoryId = kitchen.id.trim()
-    dispatch(setCuisineKeys([]))
+    dispatch(setTags([]))
     navigate(
       buildRestaurantsUrl([], {
         address: '',

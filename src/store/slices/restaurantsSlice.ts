@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { Category, CuisineType, Restaurant } from '../types/domain'
-import { fetchCategories, fetchCuisineTypes, fetchRestaurants, fetchCuisineCounts } from '../thunks/restaurantsThunks'
+import { fetchCategories, fetchCuisineTypes, fetchRestaurants, fetchAllRestaurantsLive } from '../thunks/restaurantsThunks'
 
 export type SortBy = 'recommended' | 'rating' | 'orders'
 
@@ -8,8 +8,7 @@ export type RestaurantsFilters = {
   search: string
   latitude: number | null
   longitude: number | null
-  selectedCategoryIds: string[]
-  cuisineKeys: string[]
+  selectedTags: string[]
   minRating: number | null
   openNow: boolean
   sortBy: SortBy
@@ -20,7 +19,9 @@ export type RestaurantsFilters = {
 export type RestaurantsState = {
   categories: Category[]
   cuisineOptions: CuisineType[]
-  cuisineCountsMap: Record<string, number>
+  tagCounts: Record<string, number>
+  allRestaurants: Restaurant[]
+  isAllRestaurantsLoaded: boolean
   items: Restaurant[]
   total: number
   loading: boolean
@@ -31,7 +32,9 @@ export type RestaurantsState = {
 const initialState: RestaurantsState = {
   categories: [],
   cuisineOptions: [],
-  cuisineCountsMap: {},
+  tagCounts: {},
+  allRestaurants: [],
+  isAllRestaurantsLoaded: false,
   items: [],
   total: 0,
   loading: false,
@@ -40,8 +43,7 @@ const initialState: RestaurantsState = {
     search: '',
     latitude: null,
     longitude: null,
-    selectedCategoryIds: [],
-    cuisineKeys: [],
+    selectedTags: [],
     minRating: null,
     openNow: true,
     sortBy: 'rating',
@@ -66,43 +68,22 @@ const restaurantsSlice = createSlice({
       state.filters.longitude = action.payload.longitude
       state.filters.page = 1
     },
-    toggleCategory(state, action: PayloadAction<string>) {
-      const id = action.payload
-      const idx = state.filters.selectedCategoryIds.indexOf(id)
-      if (idx === -1) state.filters.selectedCategoryIds.push(id)
-      else state.filters.selectedCategoryIds.splice(idx, 1)
+    toggleTag(state, action: PayloadAction<string>) {
+      const tag = action.payload.trim().toLowerCase()
+      if (!tag) return
+      const idx = state.filters.selectedTags.indexOf(tag)
+      if (idx === -1) state.filters.selectedTags.push(tag)
+      else state.filters.selectedTags.splice(idx, 1)
       state.filters.page = 1
     },
-    setCategoryIds(state, action: PayloadAction<string[]>) {
-      state.filters.selectedCategoryIds = Array.from(
+    setTags(state, action: PayloadAction<string[]>) {
+      state.filters.selectedTags = Array.from(
         new Set(
           action.payload
-            .map((value) => value.trim())
+            .map((value) => value.trim().toLowerCase())
             .filter(Boolean),
         ),
       )
-      state.filters.page = 1
-    },
-    toggleCuisine(state, action: PayloadAction<string>) {
-      const key = action.payload
-      const set = new Set(state.filters.cuisineKeys)
-      if (set.has(key)) set.delete(key)
-      else set.add(key)
-      state.filters.cuisineKeys = Array.from(set)
-      state.filters.page = 1
-    },
-    setCuisineChecked(state, action: PayloadAction<{ key: string; checked: boolean }>) {
-      const key = action.payload.key.trim()
-      if (!key) return
-
-      const set = new Set(state.filters.cuisineKeys)
-      if (action.payload.checked) set.add(key)
-      else set.delete(key)
-      state.filters.cuisineKeys = Array.from(set)
-      state.filters.page = 1
-    },
-    setCuisineKeys(state, action: PayloadAction<string[]>) {
-      state.filters.cuisineKeys = Array.from(new Set(action.payload))
       state.filters.page = 1
     },
     setMinRating(state, action: PayloadAction<number | null>) {
@@ -132,8 +113,9 @@ const restaurantsSlice = createSlice({
       .addCase(fetchCuisineTypes.fulfilled, (state, action) => {
         state.cuisineOptions = action.payload
       })
-      .addCase(fetchCuisineCounts.fulfilled, (state, action) => {
-        state.cuisineCountsMap = action.payload
+      .addCase(fetchAllRestaurantsLive.fulfilled, (state, action) => {
+        state.allRestaurants = action.payload
+        state.isAllRestaurantsLoaded = true
       })
       .addCase(fetchRestaurants.pending, (state) => {
         state.loading = true
@@ -143,6 +125,9 @@ const restaurantsSlice = createSlice({
         state.loading = false
         state.items = action.payload.items
         state.total = action.payload.total
+        if (action.payload.tagCounts) {
+          state.tagCounts = action.payload.tagCounts
+        }
       })
       .addCase(fetchRestaurants.rejected, (state, action) => {
         state.loading = false
@@ -154,11 +139,8 @@ const restaurantsSlice = createSlice({
 export const {
   setSearch,
   setSearchCoordinates,
-  toggleCategory,
-  setCategoryIds,
-  toggleCuisine,
-  setCuisineChecked,
-  setCuisineKeys,
+  toggleTag,
+  setTags,
   setMinRating,
   setOpenNow,
   setSortBy,

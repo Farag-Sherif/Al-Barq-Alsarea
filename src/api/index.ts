@@ -1562,7 +1562,7 @@ function normalizeMenuCategoryLabel(value: unknown): string {
   return normalizedWhitespace
 }
 
-function normalizeFilterValue(value: string): string {
+export function normalizeFilterValue(value: string): string {
   return value
     .toLowerCase()
     .normalize('NFKC')
@@ -1578,7 +1578,7 @@ function normalizeFilterValue(value: string): string {
     .trim()
 }
 
-function buildFilterNeedles(...groups: Array<string[] | undefined>): string[] {
+export function buildFilterNeedles(...groups: Array<string[] | undefined>): string[] {
   const merged = groups
     .flatMap((group) => group ?? [])
     .map((value) => normalizeFilterValue(value))
@@ -7104,10 +7104,7 @@ async function getCuisineTypesLive(): Promise<CuisineType[]> {
 }
 
 async function getRestaurantsLive(query: RestaurantsQuery): Promise<{ items: Restaurant[]; total: number }> {
-  const categoryIdsParam = query.categoryIds?.join(',')
-  const categoryNamesParam = query.categoryNames?.join(',')
-  const cuisineKeysParam = query.cuisineKeys?.join(',')
-  const cuisineLabelsParam = query.cuisineLabels?.join(',')
+  const selectedTagsParam = query.selectedTags?.join(',')
   const searchTerm = typeof query.search === 'string' ? query.search.trim() : ''
   const addressTerm = typeof query.address === 'string' ? query.address.trim() : ''
   const hasSearchTerm = searchTerm.length > 0
@@ -7128,14 +7125,7 @@ async function getRestaurantsLive(query: RestaurantsQuery): Promise<{ items: Res
     longitude: hasGeoCoordinates ? query.longitude : undefined,
     lat: hasGeoCoordinates ? query.latitude : undefined,
     lng: hasGeoCoordinates ? query.longitude : undefined,
-    category_ids: categoryIdsParam,
-    categories: categoryIdsParam,
-    category: categoryIdsParam,
-    category_names: categoryNamesParam,
-    cuisine_types: cuisineKeysParam,
-    cuisine_keys: cuisineKeysParam,
-    cuisines: cuisineKeysParam,
-    cuisine_labels: cuisineLabelsParam,
+    tags: selectedTagsParam,
     min_rating: query.minRating ?? undefined,
     open_now: query.openNow === true ? 1 : query.openNow === false ? 0 : undefined,
     sort_by: query.sortBy && query.sortBy !== 'recommended' ? query.sortBy : undefined,
@@ -7195,14 +7185,7 @@ async function getRestaurantsLive(query: RestaurantsQuery): Promise<{ items: Res
       longitude: hasGeoCoordinates ? query.longitude : undefined,
       lat: hasGeoCoordinates ? query.latitude : undefined,
       lng: hasGeoCoordinates ? query.longitude : undefined,
-      category_ids: categoryIdsParam,
-      categories: categoryIdsParam,
-      category: categoryIdsParam,
-      category_names: categoryNamesParam,
-      cuisine_types: cuisineKeysParam,
-      cuisine_keys: cuisineKeysParam,
-      cuisines: cuisineKeysParam,
-      cuisine_labels: cuisineLabelsParam,
+      tags: selectedTagsParam,
       min_rating: query.minRating ?? undefined,
       open_now: query.openNow === true ? 1 : query.openNow === false ? 0 : undefined,
       sort_by: query.sortBy && query.sortBy !== 'recommended' ? query.sortBy : undefined,
@@ -7284,33 +7267,8 @@ async function getRestaurantsLive(query: RestaurantsQuery): Promise<{ items: Res
     }
   }
 
-  const categoryNeedles = buildFilterNeedles(query.categoryIds, query.categoryNames)
-  const cuisineNeedles = buildFilterNeedles(query.cuisineKeys, query.cuisineLabels)
-  let appliedCategoryFallbackFilter = false
-  let appliedCuisineFallbackFilter = false
-
   if (hasSearchTerm && !serverSearchSatisfied) {
     items = applySearchFallbackFilter(items)
-  }
-
-  if (categoryNeedles.length) {
-    const categoryFiltered = applyNeedleFallbackFilter(
-      items,
-      categoryNeedles,
-      (restaurant) => [...restaurant.tags],
-    )
-    items = categoryFiltered.items
-    appliedCategoryFallbackFilter = categoryFiltered.applied
-  }
-
-  if (cuisineNeedles.length) {
-    const cuisineFiltered = applyNeedleFallbackFilter(
-      items,
-      cuisineNeedles,
-      (restaurant) => [restaurant.cuisine, ...restaurant.tags],
-    )
-    items = cuisineFiltered.items
-    appliedCuisineFallbackFilter = cuisineFiltered.applied
   }
 
   if (query.minRating) {
@@ -7337,8 +7295,6 @@ async function getRestaurantsLive(query: RestaurantsQuery): Promise<{ items: Res
   }
 
   const hasClientFallbackFilters =
-    appliedCategoryFallbackFilter ||
-    appliedCuisineFallbackFilter ||
     appliedOpenStateFallback ||
     appliedSearchFallbackFilter ||
     appliedAddressFallbackFilter

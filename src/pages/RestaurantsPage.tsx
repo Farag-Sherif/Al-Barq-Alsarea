@@ -14,18 +14,16 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setSelectedAddress } from '@/store/slices/deliverySlice'
 import {
   resetFilters,
-  setCategoryIds,
-  setCuisineChecked,
-  setCuisineKeys,
-  setMinRating,
   setOpenNow,
   setPage,
+  setMinRating,
   setSearch,
   setSearchCoordinates,
   setSortBy,
-  toggleCategory,
+  toggleTag,
+  setTags,
 } from '@/store/slices/restaurantsSlice'
-import { fetchCategories, fetchCuisineTypes, fetchRestaurants } from '@/store/thunks/restaurantsThunks'
+import { fetchCategories, fetchCuisineTypes, fetchRestaurants, fetchAllRestaurantsLive } from '@/store/thunks/restaurantsThunks'
 import FilterSection from '@/components/restaurants/FilterSection'
 import RestaurantRow from '@/components/restaurants/RestaurantRow'
 import { useI18n } from '@/i18n/I18nProvider'
@@ -195,7 +193,7 @@ export default function RestaurantsPage() {
   const dispatch = useAppDispatch()
   const { t, dir, lang } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { categories, cuisineOptions, items, total, loading, filters } = useAppSelector((s) => s.restaurants)
+  const { categories, cuisineOptions, tagCounts, items, total, loading, filters, isAllRestaurantsLoaded } = useAppSelector((s) => s.restaurants)
   const selectedAddress = useAppSelector((s) => s.delivery.selectedAddress)
 
   const [searchInput, setSearchInput] = useState(filters.search)
@@ -263,101 +261,39 @@ export default function RestaurantsPage() {
     () => formatAddressForDisplay(activeAddress, lang),
     [activeAddress, lang],
   )
-  const maxCuisineCountsRef = useRef<Map<string, number>>(new Map())
-  const lastBaseSignatureRef = useRef<string>('')
-
-  const baseSignature = `${activeAddress}|${effectiveSearchParam}|${parsedCategoryParamValues.join(',')}`
-  if (lastBaseSignatureRef.current !== baseSignature) {
-    maxCuisineCountsRef.current.clear()
-    lastBaseSignatureRef.current = baseSignature
-  }
-
-  const cuisineCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const option of cuisineOptions) {
-      counts.set(option.key, 0)
-    }
-
-    for (const item of items) {
-      const rawValues = [item.cuisine, item.cuisineAr, item.cuisineEn, ...(item.tags || [])].filter(Boolean) as string[]
-      const keys = resolveCuisineKeysFromQueryParam(rawValues, cuisineOptions)
-      for (const k of keys) {
-        counts.set(k, (counts.get(k) || 0) + 1)
-      }
-    }
-
-    // Accumulate the maximum seen count so filters don't disappear when one is selected
-    for (const [key, count] of counts.entries()) {
-      const currentMax = maxCuisineCountsRef.current.get(key) || 0
-      if (count > currentMax) {
-        maxCuisineCountsRef.current.set(key, count)
-      }
-    }
-
-    return counts
-  }, [items, cuisineOptions])
-
-  const maxCategoryCountsRef = useRef<Map<string, number>>(new Map())
-
-  if (lastBaseSignatureRef.current !== baseSignature) {
-    maxCategoryCountsRef.current.clear()
-    // lastBaseSignatureRef is already updated above
-  }
-
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const cat of categories) {
-      counts.set(cat.id, 0)
-    }
-
-    for (const item of items) {
-      const rawValues = [item.cuisine, item.cuisineAr, item.cuisineEn, ...(item.tags || [])].filter(Boolean) as string[]
-      const ids = resolveCategoryIdsFromQueryParam(rawValues, categories)
-      for (const id of ids) {
-        counts.set(id, (counts.get(id) || 0) + 1)
-      }
-    }
-
-    // Accumulate the maximum seen count
-    for (const [id, count] of counts.entries()) {
-      const currentMax = maxCategoryCountsRef.current.get(id) || 0
-      if (count > currentMax) {
-        maxCategoryCountsRef.current.set(id, count)
-      }
-    }
-
-    return counts
-  }, [items, categories])
-
   const validCategories = useMemo(() => {
     return categories
       .filter((cat) => {
-        const maxSeen = maxCategoryCountsRef.current.get(cat.id) || 0
-        const current = categoryCounts.get(cat.id) || 0
-        const isSelected = filters.selectedCategoryIds.includes(cat.id)
-        return maxSeen > 0 || current > 0 || isSelected
+        const apiCount = tagCounts[cat.id] !== undefined && tagCounts[cat.id] >= 0
+          ? tagCounts[cat.id]
+          : (cat.restaurantsCount || 0)
+        const isSelected = filters.selectedTags.includes(cat.id.toLowerCase())
+        return apiCount > 0 || isSelected
       })
       .sort((a, b) => {
-        const countA = Math.max(maxCategoryCountsRef.current.get(a.id) || 0, categoryCounts.get(a.id) || 0)
-        const countB = Math.max(maxCategoryCountsRef.current.get(b.id) || 0, categoryCounts.get(b.id) || 0)
+        const countA = tagCounts[a.id] !== undefined && tagCounts[a.id] >= 0
+          ? tagCounts[a.id]
+          : (a.restaurantsCount || 0)
+        const countB = tagCounts[b.id] !== undefined && tagCounts[b.id] >= 0
+          ? tagCounts[b.id]
+          : (b.restaurantsCount || 0)
         return countB - countA
       })
-  }, [categories, categoryCounts, filters.selectedCategoryIds])
+  }, [categories, tagCounts, filters.selectedTags])
 
   const validCuisineOptions = useMemo(() => {
     return cuisineOptions
       .filter((option) => {
-        const maxSeen = maxCuisineCountsRef.current.get(option.key) || 0
-        const current = cuisineCounts.get(option.key) || 0
-        const isSelected = filters.cuisineKeys.includes(option.key)
-        return maxSeen > 0 || current > 0 || isSelected
+        const current = tagCounts[option.key] || 0
+        const isSelected = filters.selectedTags.includes(option.key.toLowerCase())
+        return current > 0 || isSelected
       })
       .sort((a, b) => {
-        const countA = Math.max(maxCuisineCountsRef.current.get(a.key) || 0, cuisineCounts.get(a.key) || 0)
-        const countB = Math.max(maxCuisineCountsRef.current.get(b.key) || 0, cuisineCounts.get(b.key) || 0)
+        const countA = tagCounts[a.key] || 0
+        const countB = tagCounts[b.key] || 0
         return countB - countA
       })
-  }, [cuisineOptions, cuisineCounts, filters.cuisineKeys])
+  }, [cuisineOptions, tagCounts, filters.selectedTags])
 
   const visibleCuisineOptions = useMemo(() => {
     if (showAllCuisines) return validCuisineOptions
@@ -365,10 +301,10 @@ export default function RestaurantsPage() {
     const baseOptions = validCuisineOptions.slice(0, 6)
     const baseKeys = new Set(baseOptions.map((option) => option.key))
     const selectedOutsideBase = validCuisineOptions.filter(
-      (option) => filters.cuisineKeys.includes(option.key) && !baseKeys.has(option.key),
+      (option) => filters.selectedTags.includes(option.key.toLowerCase()) && !baseKeys.has(option.key),
     )
     return [...baseOptions, ...selectedOutsideBase]
-  }, [validCuisineOptions, filters.cuisineKeys, showAllCuisines])
+  }, [validCuisineOptions, filters.selectedTags, showAllCuisines])
   const canToggleCuisineView = validCuisineOptions.length > 6
   const appliedFilterParamsRef = useRef('')
   const rawFilterParamsSignature = useMemo(
@@ -397,8 +333,13 @@ export default function RestaurantsPage() {
     if (appliedFilterParamsRef.current === rawFilterParamsSignature) return
 
     dispatch(resetFilters())
-    dispatch(setCategoryIds(resolvedCategoryParamIds.length ? resolvedCategoryParamIds : parsedCategoryParamValues))
-    dispatch(setCuisineKeys(resolvedCuisineParamKeys.length ? resolvedCuisineParamKeys : parsedCuisineParamValues))
+    const nextTags = Array.from(new Set([
+      ...resolvedCategoryParamIds, 
+      ...parsedCategoryParamValues,
+      ...resolvedCuisineParamKeys,
+      ...parsedCuisineParamValues
+    ]))
+    dispatch(setTags(nextTags))
     setSearchInput('')
     appliedFilterParamsRef.current = rawFilterParamsSignature
   }, [
@@ -497,13 +438,20 @@ export default function RestaurantsPage() {
     filters.search,
     filters.latitude,
     filters.longitude,
-    filters.selectedCategoryIds,
-    filters.cuisineKeys,
+    filters.selectedTags,
     filters.minRating,
     filters.openNow,
     filters.sortBy,
     filters.page,
+    isAllRestaurantsLoaded,
   ])
+
+  useEffect(() => {
+    if (!isAllRestaurantsLoaded) {
+      dispatch(fetchAllRestaurantsLive())
+    }
+  }, [dispatch, isAllRestaurantsLoaded])
+
 
   function scrollCategories(direction: 'prev' | 'next') {
     const el = scrollerRef.current
@@ -584,18 +532,19 @@ export default function RestaurantsPage() {
               >
                 {validCategories.map((c) => {
                   const categoryName = lang === 'ar' ? c.nameAr || c.name : c.nameEn || c.name || c.nameAr || ''
-                  const isSelected = filters.selectedCategoryIds.includes(c.id)
+                  const isSelected = filters.selectedTags.includes(c.id.toLowerCase())
                   
-                  // Compute dynamic count
-                  const currentCount = categoryCounts.get(c.id) || 0
-                  const maxCount = maxCategoryCountsRef.current.get(c.id) || 0
-                  const displayCount = Math.max(currentCount, maxCount, c.restaurantsCount || 0)
+                  const displayCount = tagCounts[c.id] !== undefined && tagCounts[c.id] >= 0
+                    ? tagCounts[c.id]
+                    : (c.restaurantsCount || 0)
 
                   return (
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => dispatch(toggleCategory(c.id))}
+                      onClick={() => {
+                        dispatch(toggleTag(c.id))
+                      }}
                       className={clsx(
                         'relative h-[220px] w-[220px] min-w-[220px] shrink-0 overflow-hidden rounded-xl border-2 bg-white text-start shadow-card transition-all duration-200 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20',
                         isSelected ? 'border-primary' : 'border-transparent hover:scale-[1.02] hover:shadow-md',
@@ -662,7 +611,10 @@ export default function RestaurantsPage() {
                     size="sm"
                     className="!rounded-full"
                     disabled={filters.page <= 1}
-                    onClick={() => dispatch(setPage(Math.max(1, filters.page - 1)))}
+                    onClick={() => {
+                      dispatch(setPage(Math.max(1, filters.page - 1)))
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
                   >
                     {t('restaurants.prev')}
                   </Button>
@@ -671,7 +623,10 @@ export default function RestaurantsPage() {
                     size="sm"
                     className="!rounded-full"
                     disabled={filters.page >= pageCount}
-                    onClick={() => dispatch(setPage(Math.min(pageCount, filters.page + 1)))}
+                    onClick={() => {
+                      dispatch(setPage(Math.min(pageCount, filters.page + 1)))
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
                   >
                     {t('restaurants.next')}
                   </Button>
@@ -718,8 +673,8 @@ export default function RestaurantsPage() {
                             : c.labelEn || c.label || c.labelAr || fallbackTranslatedLabel
                         return (
                           <Checkbox
-                            checked={filters.cuisineKeys.includes(c.key)}
-                            onChange={(checked) => dispatch(setCuisineChecked({ key: c.key, checked }))}
+                            checked={filters.selectedTags.includes(c.key.toLowerCase())}
+                            onChange={() => dispatch(toggleTag(c.key))}
                             label={label}
                           />
                         )
