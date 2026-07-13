@@ -252,28 +252,28 @@ export default function HomePage() {
   )
 
   const categories = useAppSelector((s) => s.restaurants.categories)
+  const { tagCounts, isAllRestaurantsLoaded } = useAppSelector((s) => s.restaurants)
+
+  useEffect(() => {
+    if (!isAllRestaurantsLoaded) {
+      dispatch(fetchAllRestaurantsLive())
+    }
+  }, [dispatch, isAllRestaurantsLoaded])
 
   const cuisineKitchenCards = useMemo<Kitchen[]>(() => {
     if (!cuisineOptions.length) return []
 
-    const availableTerms = new Set<string>()
-    mostOrdered.forEach((r) => {
-      if (r.cuisine) availableTerms.add(r.cuisine.trim().toLowerCase())
-      if (r.cuisineAr) availableTerms.add(r.cuisineAr.trim().toLowerCase())
-      if (r.cuisineEn) availableTerms.add(r.cuisineEn.trim().toLowerCase())
-      r.tags?.forEach((t) => availableTerms.add(t.trim().toLowerCase()))
-    })
+
 
     return cuisineOptions.reduce<Kitchen[]>((rows, cuisine, index) => {
         const key = cuisine.key.trim()
         if (!key) return rows
 
-        const matchTerms = [key, cuisine.name, cuisine.nameAr, cuisine.label, cuisine.labelAr, cuisine.labelEn]
-          .map(t => t?.trim().toLowerCase())
-          .filter(Boolean)
+        const current = tagCounts[cuisine.key] || 0
+        // Hide if data is loaded and count is 0
+        if (isAllRestaurantsLoaded && current === 0) return rows
 
-        const hasResults = matchTerms.some(term => availableTerms.has(term!))
-        if (!hasResults) return rows
+
 
         const titleAr =
           (cuisine.nameAr ?? '').trim() ||
@@ -302,7 +302,7 @@ export default function HomePage() {
         })
         return rows
       }, [])
-  }, [cuisineOptions, mostOrdered, kitchenImageFallbacks])
+  }, [cuisineOptions, kitchenImageFallbacks, tagCounts, isAllRestaurantsLoaded])
   const kitchensGrid = cuisineKitchenCards
   const heroTagline = pickLocalizedApiText(lang, {
     ar: settings?.homeHeroTaglineAr || settings?.siteDescriptionAr,
