@@ -23,6 +23,7 @@ import {
 } from '@/utils/restaurantsRoute'
 import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock'
 import { formatCurrency } from '@/utils/format'
+import { filterRestaurantsData } from '@/utils/filterRestaurants'
 
 const kitchenImageFallbacks = ['/images/kitchen-1.jpg', '/images/kitchen-2.jpg', '/images/kitchen-3.jpg'] as const
 const WELCOME_PROMO_CODE = 'FIRST30'
@@ -252,7 +253,13 @@ export default function HomePage() {
   )
 
   const categories = useAppSelector((s) => s.restaurants.categories)
-  const { tagCounts, isAllRestaurantsLoaded } = useAppSelector((s) => s.restaurants)
+  const { tagCounts, isAllRestaurantsLoaded, allRestaurants } = useAppSelector((s) => s.restaurants)
+
+  const computedTagCounts = useMemo(() => {
+    if (Object.keys(tagCounts).length > 0) return tagCounts
+    if (!isAllRestaurantsLoaded || !allRestaurants.length) return {}
+    return filterRestaurantsData(allRestaurants, categories, cuisineOptions, { page: 1, pageSize: 1 }).tagCounts
+  }, [tagCounts, isAllRestaurantsLoaded, allRestaurants, categories, cuisineOptions])
 
   useEffect(() => {
     if (!isAllRestaurantsLoaded) {
@@ -261,7 +268,7 @@ export default function HomePage() {
   }, [dispatch, isAllRestaurantsLoaded])
 
   const cuisineKitchenCards = useMemo<Kitchen[]>(() => {
-    if (!cuisineOptions.length) return []
+    if (!cuisineOptions.length || !isAllRestaurantsLoaded) return []
 
 
 
@@ -269,9 +276,9 @@ export default function HomePage() {
         const key = cuisine.key.trim()
         if (!key) return rows
 
-        const current = tagCounts[cuisine.key] || 0
-        // Hide if data is loaded and count is 0
-        if (isAllRestaurantsLoaded && current === 0) return rows
+        const current = computedTagCounts[cuisine.key] || 0
+        // Hide if count is 0
+        if (current === 0) return rows
 
 
 
@@ -963,7 +970,7 @@ export default function HomePage() {
       {/* Kitchens */}
       <CategoriesSection 
         kitchens={kitchensGrid}
-        loading={loading}
+        loading={loading || !isAllRestaurantsLoaded}
         goToAllRestaurants={goToAllRestaurants}
         goToRestaurantsByKitchen={goToRestaurantsByKitchen}
         kitchenImageFallbacks={kitchenImageFallbacks}

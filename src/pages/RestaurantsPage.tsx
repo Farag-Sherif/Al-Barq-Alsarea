@@ -444,6 +444,8 @@ export default function RestaurantsPage() {
     filters.sortBy,
     filters.page,
     isAllRestaurantsLoaded,
+    categories.length,
+    cuisineOptions.length,
   ])
 
   useEffect(() => {
